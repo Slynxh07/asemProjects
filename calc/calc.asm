@@ -2,13 +2,19 @@ bits 64
 
 section .data
     prompt1 db "First number: "
-    p1len   equ $ - prompt1
+    p1len equ $ - prompt1
 
     prompt2 db "Second number: "
-    p2len   equ $ - prompt2
+    p2len equ $ - prompt2
+
+    prompt_op db "Enter your operator: "
+    prompt_op_len equ $ - prompt_op
+
+    invalid_input db "Invalid input, try again...", 10
+    invalid_input_length equ $ - invalid_input
 
 section .bss
-    buffer  resb 32
+    buffer resb 32
     output resb 32
 
 section .text
@@ -31,14 +37,60 @@ _start:
     call read_input
     mov rsi, buffer
     call atoi
+    mov r13, rax
 
-    add rax, r12
+.op_loop:
+    mov rsi, prompt_op
+    mov rdx, prompt_op_len
+    call print
+
+    call read_input
+    mov rbx, buffer
+    movzx rsi, byte [rbx]
+
+    cmp rsi, 42
+    je .multiply
+    cmp rsi, 43
+    je .add
+    cmp rsi, 45
+    je .subtract
+    cmp rsi, 47
+    je .divide
+
+    mov rsi, invalid_input
+    mov rdx, invalid_input_length
+    call print
+    jmp .op_loop
+
+.add:
+    add r12, r13
+    mov rax, r12
+    jmp .end
+
+.subtract:
+    sub r12, r13
+    mov rax, r12
+    jmp .end
+
+.multiply:
+    imul r12, r13
+    mov rax, r12
+    jmp .end
+
+.divide:
+    mov rax, r12
+    div r13
+    jmp .end
+
+.end:
     call itoa
     call print
 
     mov rax, 60
     xor rdi, rdi
     syscall
+
+
 
 print:
     mov rax, 1
